@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pencatatan Keuangan Mudah</title>
+
+  <!-- Meta untuk PWA -->
+  <meta name="theme-color" content="#4a90e2" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png" sizes="192x192" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png" />
+  
+  <style>
+    /* Gaya dasar */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #f2f6fb;
+      color: #222;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 16px 32px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    h1 {
+      font-size: 2rem;
+      color: #2c3e50;
+      margin-bottom: 24px;
+    }
+    /* Header */
+    header {
+      background: #4a90e2;
+      color: white;
+      padding: 1.5rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    nav {
+      display: flex;
+      gap: 24px;
+    }
+    nav button {
+      color: white;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+    }
+    /* Formulir */
+    .form-section {
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+      margin-bottom: 48px;
+    }
+    form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    label {
+      display: flex;
+      flex-direction: column;
+      font-weight: 600;
+    }
+    input, select, textarea {
+      padding: 12px;
+      border: 1.5px solid #d1d9e6;
+      border-radius: 12px;
+      margin-top: 8px;
+    }
+    button[type="submit"] {
+      grid-column: 1 / -1;
+      background: #4a90e2;
+      color: white;
+      padding: 14px;
+      border-radius: 16px;
+      cursor: pointer;
+    }
+    /* Ringkasan Keuangan */
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+    .summary-card {
+      background: white;
+      padding: 24px;
+      border-radius: 20px;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.05);
+      text-align: center;
+    }
+    /* Daftar Transaksi */
+    .transactions-section {
+      margin-bottom: 80px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 14px;
+      text-align: left;
+    }
+    tr:hover {
+      background: #e9f7f1;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Pencatatan Keuangan Mudah</h1>
+      <nav>
+        <button id="btn-summary">Ringkasan</button>
+        <button id="btn-transactions">Transaksi</button>
+        <button id="btn-add">Tambah</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Ringkasan Keuangan -->
+    <section id="section-summary">
+      <div class="summary">
+        <div class="summary-card">
+          <h3>Pemasukan</h3>
+          <div id="total-income">Rp 0</div>
+        </div>
+        <div class="summary-card">
+          <h3>Pengeluaran</h3>
+          <div id="total-expense">Rp 0</div>
+        </div>
+        <div class="summary-card">
+          <h3>Saldo</h3>
+          <div id="balance">Rp 0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Daftar Transaksi -->
+    <section id="section-transactions" hidden>
+      <div class="transactions-section">
+        <h2>Transaksi</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Kategori</th>
+              <th>Deskripsi</th>
+              <th>Jumlah</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="transactions-list">
+            <tr><td colspan="5" style="text-align:center; color:#999;">Belum ada transaksi.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Form Tambah/Edit Transaksi -->
+    <section id="section-add-edit" class="form-section" hidden>
+      <h2 id="form-title">Tambah Transaksi Baru</h2>
+      <form id="transaction-form">
+        <label for="input-type">Jenis
+          <select id="input-type" name="type" required>
+            <option value="income">Pemasukan</option>
+            <option value="expense">Pengeluaran</option>
+          </select>
+        </label>
+        <label for="input-amount">Jumlah (Rp)
+          <input type="number" id="input-amount" name="amount" required />
+        </label>
+        <label for="input-category">Kategori
+          <select id="input-category" name="category" required>
+            <option value="" disabled selected>Pilih kategori</option>
+            <option value="Makanan">Makanan</option>
+            <option value="Transportasi">Transportasi</option>
+            <option value="Gaji">Gaji</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
+        </label>
+        <label for="input-date">Tanggal
+          <input type="date" id="input-date" name="date" required />
+        </label>
+        <label for="input-description">Deskripsi
+          <textarea id="input-description" name="description" placeholder="Catatan opsional"></textarea>
+        </label>
+        <button type="submit">Simpan</button>
+      </form>
+    </section>
+  </main>
+
+<script>
+(() => {
+  const btnSummary = document.getElementById('btn-summary');
+  const btnTransactions = document.getElementById('btn-transactions');
+  const btnAdd = document.getElementById('btn-add');
+
+  const sectionSummary = document.getElementById('section-summary');
+  const sectionTransactions = document.getElementById('section-transactions');
+  const sectionAddEdit = document.getElementById('section-add-edit');
+
+  const totalIncomeEl = document.getElementById('total-income');
+  const totalExpenseEl = document.getElementById('total-expense');
+  const balanceEl = document.getElementById('balance');
+
+  const transactionsList = document.getElementById('transactions-list');
+  const form = document.getElementById('transaction-form');
+  const inputType = document.getElementById('input-type');
+  const inputAmount = document.getElementById('input-amount');
+  const inputCategory = document.getElementById('input-category');
+  const inputDate = document.getElementById('input-date');
+  const inputDescription = document.getElementById('input-description');
+
+  let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+  let editingId = null;
+
+  function saveTransactions() {
+    localStorage.setItem('transactions', JSON.stringify(transactions));
+  }
+
+  function formatCurrency(num) {
+    return 'Rp ' + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  }
+
+  function renderSummary() {
+    let income = 0;
+    let expense = 0;
+    transactions.forEach(t => {
+      if (t.type === 'income') income += t.amount;
+      else expense += t.amount;
+    });
+    totalIncomeEl.textContent = formatCurrency(income);
+    totalExpenseEl.textContent = formatCurrency(expense);
+    balanceEl.textContent = formatCurrency(income - expense);
+  }
+
+  function renderTransactions() {
+    if (transactions.length === 0) {
+      transactionsList.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Belum ada transaksi.</td></tr>';
+      return;
+    }
+    transactionsList.innerHTML = '';
+    transactions.forEach(t => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${new Date(t.date).toLocaleDateString('id-ID')}</td>
+        <td>${t.category}</td>
+        <td>${t.description || '-'}</td>
+        <td>${formatCurrency(t.amount)}</td>
+        <td>
+          <button class="btn-edit">Edit</button>
+          <button class="btn-delete">Hapus</button>
+        </td>
+      `;
+      tr.querySelector('.btn-edit').addEventListener('click', () => openEdit(t.id));
+      tr.querySelector('.btn-delete').addEventListener('click', () => deleteTransaction(t.id));
+      transactionsList.appendChild(tr);
+    });
+  }
+
+  function clearForm() {
+    editingId = null;
+    inputType.value = 'income';
+    inputAmount.value = '';
+    inputCategory.value = '';
+    inputDate.valueAsDate = new Date();
+    inputDescription.value = '';
+  }
+
+  function openEdit(id) {
+    const t = transactions.find(tr => tr.id === id);
+    if (!t) return;
+    editingId = id;
+    inputType.value = t.type;
+    inputAmount.value = t.amount;
+    inputCategory.value = t.category;
+    inputDate.value = t.date;
+    inputDescription.value = t.description;
+    showSection('addEdit');
+  }
+
+  function deleteTransaction(id) {
+    if(confirm('Hapus transaksi ini?')) {
+      transactions = transactions.filter(t => t.id !== id);
+      saveTransactions();
+      renderTransactions();
+      renderSummary();
+      showSection('summary');
+    }
+  }
+
+  btnSummary.addEventListener('click', () => showSection('summary'));
+  btnTransactions.addEventListener('click', () => showSection('transactions'));
+  btnAdd.addEventListener('click', () => {
+    clearForm();
+    showSection('addEdit');
+  });
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const amount = Number(inputAmount.value);
+    if(!amount || amount <= 0) {
+      alert('Masukkan jumlah yang valid');
+      return;
+    }
+    if(!inputCategory.value) {
+      alert('Pilih kategori');
+      return;
+    }
+    if(!inputDate.value) {
+      alert('Pilih tanggal');
+      return;
+    }
+    const transaction = {
+      id: editingId || Date.now().toString(),
+      type: inputType.value,
+      amount,
+      category: inputCategory.value,
+      date: inputDate.value,
+      description: inputDescription.value.trim()
+    };
+    if(editingId) {
+      const idx = transactions.findIndex(t => t.id === editingId);
+      if(idx >= 0) transactions[idx] = transaction;
+    } else {
+      transactions.push(transaction);
+    }
+    saveTransactions();
+    renderTransactions();
+    renderSummary();
+    showSection('summary');
+  });
+
+  function showSection(section) {
+    sectionSummary.hidden = section !== 'summary';
+    sectionTransactions.hidden = section !== 'transactions';
+    sectionAddEdit.hidden = section !== 'addEdit';
+  }
+
+  // Inisialisasi tampilan awal
+  renderSummary();
+  renderTransactions();
+  showSection('summary');
+
+  // Set tanggal default ke hari ini
+  inputDate.valueAsDate = new Date();
+
+  // Registrasi Service Worker PWA
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js').then(() => {
+        console.log('Service Worker terdaftar');
+      }).catch(err => {
+        console.warn('Service Worker gagal terdaftar:', err);
+      });
+    });
+  }
+})();
+</script>
+</body>
+</html>
+
